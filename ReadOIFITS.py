@@ -3,7 +3,7 @@ import os
 import fnmatch
 import numpy as np
 
-## OIFITS READING MODULE
+# OIFITS READING MODULE
 
 
 class bcolors:
@@ -29,6 +29,10 @@ def warn(msg):
     print(bcolors.WARNING + msg + bcolors.ENDC)
 
 
+def fail(msg):
+    print(bcolors.FAIL + msg + bcolors.ENDC)
+
+
 def log(msg, dir):
     f = open(dir+"log.txt", "a")
     f.write(msg+"\n")
@@ -52,9 +56,129 @@ class data:
         self.array = []  # OIARRAY()
         self.flux = []  # OIFLUX()
         self.read()
+        self.associateWave()
+        self.associateFreq()
+
+    def giveV2(self, removeflagged=True):
+        if self.vis2 == []:
+            fail('There is no V2 data in the files')
+        else:
+            V2, V2e, u, v, lam, mjd = [], [], [], [], [], []
+            for data in self.vis2:
+                flag = np.logical_not(data.flag)
+                V2i = data.vis2data
+                V2erri = data.vis2err
+                ui = data.uf
+                vi = data.vf
+                mjdi = data.mjd
+                lami = data.effwave
+
+                V2.append(V2i[flag])
+                V2e.append(V2erri[flag])
+                u.append(ui[flag])
+                v.append(vi[flag])
+                mjd.append(V2i[flag])
+                lami.append(V2i[flag])
+        return V2, V2e, u, v, lam, mjd
+
+    def associateFreq(self):
+        # OIVIS
+        for i in np.arange(len(self.vis)):
+            uf, vf = [], []
+            u = self.vis[i].ucoord
+            v = self.vis[i].vcoord
+            effwave = self.vis[i].effwave
+            for j in np.arange(len(u)):
+                uf.append(u[j]/effwave[j])
+                vf.append(v[j]/effwave[j])
+            self.vis[i].uf = np.array(uf)
+            self.vis[i].vf = np.array(vf)
+            self.vis[i].base = np.sqrt(np.array(uf)**2 + np.array(vf)**2)
+        # OIVIS2
+        for i in np.arange(len(self.vis2)):
+            uf, vf = [], []
+            u = self.vis2[i].ucoord
+            v = self.vis2[i].vcoord
+            effwave = self.vis2[i].effwave
+            for j in np.arange(len(u)):
+                uf.append(u[j]/effwave[j])
+                vf.append(v[j]/effwave[j])
+            self.vis2[i].uf = np.array(uf)
+            self.vis2[i].vf = np.array(vf)
+            self.vis2[i].base = np.sqrt(np.array(uf)**2 + np.array(vf)**2)
+        # OIT3
+        for i in np.arange(len(self.vis)):
+            uf1, vf1, uf2, vf2 = [], [], [], []
+            u1 = self.vis[i].ucoord
+            v1 = self.vis[i].vcoord
+            effwave = self.vis[i].effwave
+            for j in np.arange(len(u)):
+                uf.append(u[j]/effwave[j])
+                vf.append(v[j]/effwave[j])
+            self.vis[i].uf = uf
+            self.vis[i].vf = vf
+
+    def associateWave(self):
+        # fetch the wavelengths from OIWAVE
+        waveid = {}
+        for i in np.arange(len(self.wave)):
+            name = self.wave[i].insname
+            waveid[name] = i
+
+        # Associate the right waves to OIVIS
+        for i in np.arange(len(self.vis)):
+            name = self.vis[i].insname
+            try:
+                id = waveid[name]
+                effwave = self.wave[id].effwave
+                wave = []
+                for j in np.arange(self.vis[i].visamp.shape[0]):
+                    wave.append(effwave)
+                self.vis[i].effwave = np.array(wave)
+            except:
+                fail('No wavetable corresponding to {} found...'.format(name))
+
+        # Associate the right waves to OIVIS2
+        for i in np.arange(len(self.vis2)):
+            name = self.vis2[i].insname
+            try:
+                id = waveid[name]
+                effwave = self.wave[id].effwave
+                wave = []
+                for j in np.arange(self.vis2[i].vis2data.shape[0]):
+                    wave.append(effwave)
+                self.vis2[i].effwave = np.array(wave)
+            except:
+                fail('No wavetable corresponding to {} found...'.format(name))
+
+        # Associate the right waves to OIT3
+        for i in np.arange(len(self.t3)):
+            name = self.t3[i].insname
+            try:
+                id = waveid[name]
+                effwave = self.wave[id].effwave
+                wave = []
+                for j in np.arange(self.t3[i].t3phi.shape[0]):
+                    wave.append(effwave)
+                self.t3[i].effwave = np.array(wave)
+            except:
+                fail('No wavetable corresponding to {} found...'.format(name))
+
+        # Associate the right waves to OIFLUX
+        for i in np.arange(len(self.flux)):
+            name = self.flux[i].insname
+            try:
+                id = waveid[name]
+                effwave = self.wave[id].effwave
+                wave = []
+                for j in np.arange(self.flux[i].fluxdata.shape[0]):
+                    wave.append(effwave)
+                self.flux[i].effwave = np.array(wave)
+            except:
+                fail('No wavetable corresponding to {} found...'.format(name))
 
     def read(self):
-        inform('Reading from {}{}'.format(self.dir, self.files) )
+        inform('Reading from {}{}'.format(self.dir, self.files))
         dir = self.dir
         files = self.files
         listOfFiles = os.listdir(dir)
@@ -62,9 +186,8 @@ class data:
         for entry in listOfFiles:
             if fnmatch.fnmatch(entry, files):
                 i += 1
-                inform ('Reading '+entry+'...')
+                inform('Reading '+entry+'...')
                 self.readfile(entry)
-
 
     def readfile(self, file):
         hdul = fits.open(self.dir+file)
@@ -144,8 +267,12 @@ class data:
     def readVIS(self, hd):
         insname = hd.header['INSNAME']
         arrname = hd.header['ARRNAME']
-        amptype = hd.header['AMPTYP']
-        phitype = hd.header['PHITYP']
+        try:
+            amptype = hd.header['AMPTYP']
+            phitype = hd.header['PHITYP']
+        except KeyError:
+            amptype = 'unknown'
+            phitype = 'unknown'
         dateobs = hd.header['DATE-OBS']
         mjd = hd.data['MJD']
         targetid = hd.data['TARGET_ID']
@@ -175,61 +302,17 @@ class data:
         calstat = hd.header['CALSTAT']
         targetid = hd.data['TARGET_ID']
         mjd = hd.data['MJD']
-        flux = hd.data['FLUXDATA']
+        try:
+            flux = hd.data['FLUXDATA']
+        except KeyError:
+            flux = hd.data['FLUX']  #  for GRAVITY
         fluxerr = hd.data['FLUXERR']
         staid = hd.data['STA_INDEX']
         flag = hd.data['FLAG']
         fl = OIFLUX(insname, arrname, calstat=calstat, dateobs=dateobs, mjd=mjd, fluxdata=flux, fluxerr=fluxerr, flag=flag)
         self.flux.append(fl)
 
-    def readfilesMATISSE(self):
-        dir = self.dir
-        files = self.files
-        listOfFiles = os.listdir(dir)
-        i = 0
-        for entry in listOfFiles:
-            if fnmatch.fnmatch(entry, files):
-                i += 1
-                inform ('Reading '+entry+'...')
-                if i == 1:
-                    data = readMATISSE(dir+entry)
-                else:
-                    datatmp = readMATISSE(dir+entry)
-                    # Appending all the stuff together
-                    # Starting with u coordinates
-                    ut, u1t, u2t, u3t = datatmp['u']
-                    u, u1, u2, u3 = data['u']
-                    u = np.append(u, ut)
-                    u1 = np.append(u1, u1t)
-                    u2 = np.append(u2, u2t)
-                    u3 = np.append(u3, u3t)
-                    data['u'] = (u, u1, u2, u3)
-                    # v coordinates
-                    vt, v1t, v2t, v3t = datatmp['v']
-                    v, v1, v2, v3 = data['v']
-                    v = np.append(v, vt)
-                    v1 = np.append(v1, v1t)
-                    v2 = np.append(v2, v2t)
-                    v3 = np.append(v3, v3t)
-                    data['v'] = (v, v1, v2, v3)
-                    # wavelength tables
-                    wavet, wavecpt = datatmp['wave']
-                    wave, wavecp = data['wave']
-                    wave = np.append(wave, wavet)
-                    wavecp = np.append(wavecp, wavecpt)
-                    data['wave'] = (wave, wavecp)
-                    # Visibility squared
-                    v2t, v2et = datatmp['v2']
-                    v2, v2e = data['v2']
-                    v2 = np.append(v2, v2t)
-                    v2e = np.append(v2e, v2et)
-                    data['v2'] = (v2, v2e)
-                    # closure phases
-                    cpt, cpet = datatmp['cp']
-                    cp, cpe = data['cp']
-                    cp = np.append(cp, cpt)
-                    cpe = np.append(cpe, cpet)
-                    data['cp'] = (cp, cpe)
+
 
 
 class OITARGET:
@@ -320,6 +403,8 @@ class OIVIS:
         self.visphi = visphi
         self.visamperr = visamperr
         self.visphierr = visphierr
+        self.ucoord = ucoord
+        self.vcoord = vcoord
         self.flag = flag
 
 class OIT3:
