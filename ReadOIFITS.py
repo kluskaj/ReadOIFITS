@@ -1,3 +1,8 @@
+import astropy.io.fits as fits
+import os
+import fnmatch
+import numpy as np
+
 ## OIFITS READING MODULE
 
 
@@ -30,17 +35,152 @@ def log(msg, dir):
     f.close()
 
 
+def read(dir, files):
+    dataset = data(dir, files)
+    return dataset
+
+
 class data:
-    def __init__(self, dir='./', files='*fits', inst='all'):
+    def __init__(self, dir='./', files='*fits'):
         self.files = files
         self.dir = dir
-        self.inst = inst
+        self.target = []  # OITARGET()
+        self.wave = []  # OIWAVE()
+        self.vis2 = []  # OIVIS2()
+        self.t3 = []  # OIT3()
+        self.vis = []  # OIVIS()
+        self.array = []  # OIARRAY()
+        self.flux = []  # OIFLUX()
+        self.read()
 
     def read(self):
-        inform2('Reading from {}{}'.format(self.dir, self.files) )
-        inform2('Instrument is {}'.format(self.inst) )
-        if inst=='MATISSE':
-            readfilesMATISSE(self)
+        inform('Reading from {}{}'.format(self.dir, self.files) )
+        dir = self.dir
+        files = self.files
+        listOfFiles = os.listdir(dir)
+        i = 0
+        for entry in listOfFiles:
+            if fnmatch.fnmatch(entry, files):
+                i += 1
+                inform ('Reading '+entry+'...')
+                self.readfile(entry)
+
+
+    def readfile(self, file):
+        hdul = fits.open(self.dir+file)
+        err = False
+        i = 0
+        while err == False:
+            i += 1
+            try:
+                extname = hdul[i].header['EXTNAME']
+                print ('Reading '+extname)
+                if extname == 'OI_TARGET':
+                    self.readTARGET(hdul[i])
+                elif extname == 'OI_ARRAY':
+                    self.readARRAY(hdul[i])
+                elif extname == 'OI_WAVELENGTH':
+                    self.readWAVE(hdul[i])
+                elif extname == 'OI_VIS':
+                    self.readVIS(hdul[i])
+                elif extname == 'OI_VIS2':
+                    self.readVIS2(hdul[i])
+                elif extname == 'OI_T3':
+                    self.readT3(hdul[i])
+                elif extname == 'OI_FLUX':
+                    self.readFLUX(hdul[i])
+            except IndexError:
+                err = True
+
+    def readTARGET(self, hd):
+        target_id = hd.data['TARGET_ID']
+        target = hd.data['TARGET']
+        tar = OITARGET(target_id=target_id, target=target)
+        self.target.append(tar)
+
+    def readARRAY(self, hd):
+        arrname = hd.header['ARRNAME']
+        tel = hd.data['TEL_NAME']
+        sta = hd.data['STA_NAME']
+        staid = hd.data['STA_INDEX']
+        diam = hd.data['DIAMETER']
+        arr = OIARRAY(arrname=arrname, tel_name=tel, sta_name=sta, sta_index=staid, diameter=diam)
+        self.array.append(arr)
+
+    def readVIS2(self, hd):
+        insname = hd.header['INSNAME']
+        arrname = hd.header['ARRNAME']
+        dateobs = hd.header['DATE-OBS']
+        targetid = hd.data['TARGET_ID']
+        mjd = hd.data['MJD']
+        vis2data = hd.data['VIS2DATA']
+        vis2err = hd.data['VIS2ERR']
+        u = hd.data['UCOORD']
+        v = hd.data['VCOORD']
+        sta = hd.data['STA_INDEX']
+        flag = hd.data['FLAG']
+        vis2 = OIVIS2(arrname, insname, dateobs=dateobs, mjd=mjd, vis2data=vis2data, vis2err=vis2err, ucoord=u, vcoord=v, flag=flag)
+        self.vis2.append(vis2)
+
+    def readT3(self, hd):
+        insname = hd.header['INSNAME']
+        arrname = hd.header['ARRNAME']
+        dateobs = hd.header['DATE-OBS']
+        t3amp = hd.data['T3AMP']
+        t3phi = hd.data['T3PHI']
+        t3amperr = hd.data['T3AMPERR']
+        t3phierr = hd.data['T3PHIERR']
+        mjd = hd.data['MJD']
+        targetid = hd.data['TARGET_ID']
+        u1 = hd.data['U1COORD']
+        u2 = hd.data['U2COORD']
+        v1 = hd.data['V1COORD']
+        v2 = hd.data['V2COORD']
+        staid = hd.data['STA_INDEX']
+        flag = hd.data['FLAG']
+        T3 = OIT3(arrname, insname, dateobs=dateobs, mjd=mjd, t3amp=t3amp, t3amperr=t3amperr, t3phi=t3phi, t3phierr=t3phierr, u1coord=u1, v1coord=v1, u2coord=u2, v2coord=v2, flag=flag)
+        self.t3.append(T3)
+
+    def readVIS(self, hd):
+        insname = hd.header['INSNAME']
+        arrname = hd.header['ARRNAME']
+        amptype = hd.header['AMPTYP']
+        phitype = hd.header['PHITYP']
+        dateobs = hd.header['DATE-OBS']
+        mjd = hd.data['MJD']
+        targetid = hd.data['TARGET_ID']
+        visamp = hd.data['VISAMP']
+        visamperr = hd.data['VISAMPERR']
+        visphi = hd.data['VISPHI']
+        visphierr = hd.data['VISPHIERR']
+        u = hd.data['UCOORD']
+        v = hd.data['VCOORD']
+        staid = hd.data['STA_INDEX']
+        flag = hd.data['FLAG']
+        VIS = OIVIS(arrname, insname, amptype=amptype, phitype=phitype, dateobs=dateobs, mjd=mjd, visamp=visamp, visamperr=visamperr, visphi=visphi, visphierr=visphierr, ucoord=u, vcoord=v, flag=flag)
+        self.vis.append(VIS)
+
+    def readWAVE(self, hd):
+        insname = hd.header['INSNAME']
+        effwave = np.array(hd.data['EFF_WAVE'])
+        effband = np.array(hd.data['EFF_BAND'])
+        wave0 = OIWAVE(insname, effwave=effwave, effband=effband)
+        self.wave.append(wave0)
+        # print(self.wave, self.wave[0].effwave)
+
+    def readFLUX(self, hd):
+        dateobs = hd.header['DATE-OBS']
+        insname = hd.header['INSNAME']
+        arrname = hd.header['ARRNAME']
+        calstat = hd.header['CALSTAT']
+        targetid = hd.data['TARGET_ID']
+        mjd = hd.data['MJD']
+        flux = hd.data['FLUXDATA']
+        fluxerr = hd.data['FLUXERR']
+        staid = hd.data['STA_INDEX']
+        flag = hd.data['FLAG']
+        fl = OIFLUX(insname, arrname, calstat=calstat, dateobs=dateobs, mjd=mjd, fluxdata=flux, fluxerr=fluxerr, flag=flag)
+        self.flux.append(fl)
 
     def readfilesMATISSE(self):
         dir = self.dir
@@ -105,11 +245,32 @@ class OITARGET:
         for t, i in zip(self.target, self.target_id):
             inform('Target #{} is {}'.format(i, t))
 
-    def givetarget(self):
+    def givetargetid(self):
         return self.target, self.target_id
 
+    def givetarget(self):
+        return self.target
+
+    def giveid(self):
+        return self.target_id
+
+    def givetheid(self, target):
+        id = []
+        for t, i in zip(self.target, self.target_id):
+            if t==target:
+                id.extend(i)
+        return id
+
+    def givethetarget(self, id):
+        tar = []
+        for t, i in zip(self.target, self.target_id):
+            if i==id:
+                tar.extend(t)
+        return tar
+
+
 class OIARRAY:
-    def __init__(self, arrname='UNKNOWN', tel_name=[], sta_name=[], sta_index=[], diameter=[0]):
+    def __init__(self, arrname='UNKNOWN', tel_name=[], sta_name=[], sta_index=[], diameter=[]):
         self.arrname = arrname
         self.tel_name = tel_name
         self.sta_name = sta_name
@@ -178,7 +339,7 @@ class OIT3:
         self.flag = flag
 
 class OIFLUX:
-    def __init__(self, insname, arrname, dateobs=0, mjd=[], fluxdata=[], fluxerr=[], flag=[]):
+    def __init__(self, insname, arrname, calstat='unknown', dateobs=0, mjd=[], fluxdata=[], fluxerr=[], flag=[]):
         self.insname = insname
         self.arrname = arrname
         self.dateobs = dateobs
@@ -186,3 +347,4 @@ class OIFLUX:
         self.fluxdata = fluxdata
         self.fluxerr = fluxerr
         self.flag = flag
+        self.calstat = calstat
