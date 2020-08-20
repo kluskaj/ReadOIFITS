@@ -17,6 +17,18 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
+def header(msg):
+    print(bcolors.HEADER + msg + bcolors.ENDC)
+
+
+def bold(msg):
+    print(bcolors.BOLD + msg + bcolors.ENDC)
+
+
+def underline(msg):
+    print(bcolors.UNDERLINE + msg + bcolors.ENDC)
+
+
 def inform(msg):
     print(bcolors.OKBLUE + msg + bcolors.ENDC)
 
@@ -58,6 +70,35 @@ class data:
         self.read()
         self.associateWave()
         self.associateFreq()
+        self.extendMJD()
+        header('Success!')
+
+    def extendMJD(self):
+        inform('Assigning mjd...')
+        # OIVIS
+        for i in np.arange(len(self.vis)):
+            mjd = []
+            mjd0 = self.vis[i].mjd
+            effwave = self.vis[i].effwave
+            for j in np.arange(len(mjd0)):
+                mjd.append(np.full(len(effwave[j]), mjd0[j]))
+            self.vis[i].mjd = np.array(mjd)
+        # OIVIS2
+        for i in np.arange(len(self.vis2)):
+            mjd = []
+            mjd0 = self.vis2[i].mjd
+            effwave = self.vis2[i].effwave
+            for j in np.arange(len(mjd0)):
+                mjd.append(np.full(len(effwave[j]), mjd0[j]))
+            self.vis2[i].mjd = np.array(mjd)
+        # OIT3
+        for i in np.arange(len(self.t3)):
+            mjd = []
+            mjd0 = self.t3[i].mjd
+            effwave = self.t3[i].effwave
+            for j in np.arange(len(mjd0)):
+                mjd.append(np.full(len(effwave[j]), mjd0[j]))
+            self.t3[i].mjd = np.array(mjd)
 
     def giveV2(self, removeflagged=True):
         if self.vis2 == []:
@@ -77,11 +118,16 @@ class data:
                 V2e.append(V2erri[flag])
                 u.append(ui[flag])
                 v.append(vi[flag])
-                mjd.append(V2i[flag])
-                lami.append(V2i[flag])
+                mjd.append(mjdi[flag])
+                lam.append(lami[flag])
         return V2, V2e, u, v, lam, mjd
 
+    def givedataJK(self):
+        dataJK = {}
+
+
     def associateFreq(self):
+        inform('Assigning spatial frequencies...')
         # OIVIS
         for i in np.arange(len(self.vis)):
             uf, vf = [], []
@@ -119,6 +165,7 @@ class data:
             self.vis[i].vf = vf
 
     def associateWave(self):
+        inform('Assigning wavelengths...')
         # fetch the wavelengths from OIWAVE
         waveid = {}
         for i in np.arange(len(self.wave)):
@@ -178,7 +225,7 @@ class data:
                 fail('No wavetable corresponding to {} found...'.format(name))
 
     def read(self):
-        inform('Reading from {}{}'.format(self.dir, self.files))
+        header('Reading from {}{}'.format(self.dir, self.files))
         dir = self.dir
         files = self.files
         listOfFiles = os.listdir(dir)
