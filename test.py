@@ -12,42 +12,55 @@ data = oifits.read(dir, files)
 # MATISSE L#
 files = '*LM_*fits'
 data = oifits.read(dir, files)
+dataJK = data.givedataJK()
+uv, vv = dataJK['uvV']
+wavev = dataJK['waveV']
+va, vae, vp, vpe = dataJK['vis']
+u, u1, u2, u3 = dataJK['u']
+v, v1, v2, v3 = dataJK['v']
+V2, V2e = dataJK['v2']
+CP, CPe = dataJK['cp']
+wave, waveCP = dataJK['wave']
+
+print(uv.shape, vv.shape, wavev.shape, va.shape, vae.shape, vp.shape, vpe.shape)
+print(u.shape, v.shape, wave.shape, V2.shape, V2e.shape)
+print(u1.shape, v1.shape, u2.shape, v2.shape, u3.shape, v3.shape, waveCP.shape, CP.shape, CPe.shape)
 
 # PIONIER#
 dir = '/Users/jacques/Work/Targets/IRAS08544-4431/data/'
 files = '*fits'
-data = oifits.read(dir, files)
+# data = oifits.read(dir, files)
 
 #
 # attrs = vars(data)
 # print(', '.join("%s: %s" % item for item in attrs.items()))
-data.associateWave()
+# data.associateWave()
 # m = data.giveV2()
 
 # GRAVITY#
 dir = '/Users/jacques/Work/Targets/IRAS08544-4431/GRAVITY/DATA/'
 files = 'SCI_IRAS08544-4431_A_SINGLE_SCI_VIS_CALIBRATED_1.fits'
-data = oifits.read(dir, files)
+# data = oifits.read(dir, files)
 
 # MIDI#
 dir = '/Users/jacques/Work/Targets/IRAS08544-4431/MIDI/'
 files = 'IRAS08544-4431_1.2015-01-21b.calvisibility.fits'
-data = oifits.read(dir, files)
+# data = oifits.read(dir, files)
 
 # SPHERE/SAM#
 dir = '/Users/jacques/Work/INSPIRING/data/SPHERE/'
 files = 'IW_Car_0016mrg_allcal.oifits'
-data = oifits.read(dir, files)
+# data = oifits.read(dir, files)
 
 # NIRC2/SAM#
 dir = '/Users/jacques/Work/Targets/ZCMa/SAM/'
 files = 'ZCMa_0363mrg.oifits'
-data = oifits.read(dir, files)
+# data = oifits.read(dir, files)
 
 # MIRCX#
 dir = '/Users/jacques/Work/Targets/CLLac/'
 files = '*fits'
-data = oifits.read(dir, files)
+# data = oifits.read(dir, files)
 
 
 # attrs = vars(data)

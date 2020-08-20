@@ -56,6 +56,14 @@ def read(dir, files):
     return dataset
 
 
+def flatten(L):
+    for l in L:
+        if isinstance(l, list):
+            yield from flatten(l)
+        else:
+            yield l
+
+
 class data:
     def __init__(self, dir='./', files='*fits'):
         self.files = files
@@ -71,7 +79,7 @@ class data:
         self.associateWave()
         self.associateFreq()
         self.extendMJD()
-        header('Success!')
+        header('Success! \o/')
 
     def extendMJD(self):
         inform('Assigning mjd...')
@@ -124,7 +132,130 @@ class data:
 
     def givedataJK(self):
         dataJK = {}
+        # OIVIS
+        u, v, wave, visamp, visamperr, visphi, visphierr = [], [], [], [], [], [], []
+        for i in np.arange(len(self.vis)):
+            # fetching
+            ui = self.vis[i].uf
+            vi = self.vis[i].vf
+            wavei = self.vis[i].effwave
+            visampi = self.vis[i].visamp
+            visamperri = self.vis[i].visamperr
+            visphii = self.vis[i].visphi
+            visphierri = self.vis[i].visphierr
+            # formatting
+            ui = flatten(ui)
+            vi = flatten(vi)
+            wavei = flatten(wavei)
+            visampi = flatten(visampi)
+            visamperri = flatten(visamperri)
+            visphii = flatten(visphii)
+            visphierri = flatten(visphierri)
+            # loading
+            u.extend(ui)
+            v.extend(vi)
+            wave.extend(wavei)
+            visamp.extend(visampi)
+            visamperr.extend(visamperri)
+            visphi.extend(visphii)
+            visphierr.extend(visphierri)
+        # flattening and np.arraying
+        u = np.array(list(flatten(u)))
+        v = np.array(list(flatten(v)))
+        wave = np.array(list(flatten(wave)))
+        visamp = np.array(list(flatten(visamp)))
+        visphi = np.array(list(flatten(visphi)))
+        visamperr = np.array(list(flatten(visamperr)))
+        visphierr = np.array(list(flatten(visphierr)))
+        # writing in the dictionnary
+        dataJK['uvV'] = (u.flatten(), v.flatten())
+        dataJK['waveV'] = wave.flatten()
+        #vis = {}
+        #vis['visamp'], vis['visamperr'], vis['visphi'], vis['visphierr'] = visamp, visamperr, visphi, visphierr
+        dataJK['vis'] = (visamp.flatten(), visamperr.flatten(), visphi.flatten(), visphierr.flatten())
 
+        # OIVIS2
+        u, v, wave, vis2, vis2err = [], [], [], [], []
+        for i in np.arange(len(self.vis2)):
+            # fetching
+            ui = self.vis2[i].uf
+            vi = self.vis2[i].vf
+            wavei = self.vis2[i].effwave
+            vis2i = self.vis2[i].vis2data
+            vis2erri = self.vis2[i].vis2err
+            # formatting
+            ui = flatten(ui)
+            vi = flatten(vi)
+            wavei = flatten(wavei)
+            vis2i = flatten(vis2i)
+            vis2erri = flatten(vis2erri)
+            # loading
+            u.extend(ui)
+            v.extend(vi)
+            wave.extend(wavei)
+            vis2.extend(vis2i)
+            vis2err.extend(vis2erri)
+        # flattening and np.arraying
+        u = np.array(list(flatten(u)))
+        v = np.array(list(flatten(v)))
+        wave = np.array(list(flatten(wave)))
+        vis2 = np.array(list(flatten(vis2)))
+        vis2err = np.array(list(flatten(vis2err)))
+
+        # OIT3
+        u1, v1, u2, v2, u3, v3, wavecp, t3phi, t3phierr = [], [], [], [], [], [], [], [], []
+        for i in np.arange(len(self.vis2)):
+            # fetching
+            u1i = self.t3[i].uf1
+            v1i = self.t3[i].vf1
+            u2i = self.t3[i].uf2
+            v2i = self.t3[i].vf2
+            u3i, v3i = [], []
+            for x1, x2, y1, y2 in zip(u1i, u2i, v1i, v2i):
+                u3i.extend(x1+x2)
+                v3i.extend(y1+y2)
+            wavecpi = self.t3[i].effwave
+            t3phii = self.t3[i].t3phi
+            t3phierri = self.t3[i].t3phierr
+            # formatting
+            u1i = flatten(u1i)
+            v1i = flatten(v1i)
+            u2i = flatten(u2i)
+            v2i = flatten(v2i)
+            u3i = flatten(u3i)
+            v3i = flatten(v3i)
+            wavecpi = flatten(wavecpi)
+            t3phii = flatten(t3phii)
+            t3phierri = flatten(t3phierri)
+            # loading
+            u1.extend(u1i)
+            v1.extend(v1i)
+            u2.extend(u2i)
+            v2.extend(v2i)
+            u3.extend(u3i)
+            v3.extend(v3i)
+            wavecp.extend(wavecpi)
+            t3phi.extend(t3phii)
+            t3phierr.extend(t3phierri)
+        # flattening and np.arraying
+        u1 = np.array(list(flatten(u1)))
+        v1 = np.array(list(flatten(v1)))
+        u2 = np.array(list(flatten(u2)))
+        v2 = np.array(list(flatten(v2)))
+        u3 = np.array(list(flatten(u3)))
+        v3 = np.array(list(flatten(v3)))
+        wavecp = np.array(list(flatten(wavecp)))
+        t3phi = np.array(list(flatten(t3phi)))
+        t3phierr = np.array(list(flatten(t3phierr)))
+
+        # writing in the dictionnary
+        dataJK['u'] = (u.flatten(), u1.flatten(), u2.flatten(), u3.flatten())
+        dataJK['v'] = (v.flatten(), v1.flatten(), v2.flatten(), v3.flatten())
+        dataJK['wave'] = (wave.flatten(), wavecp.flatten())
+        dataJK['v2'] = (vis2.flatten(), vis2err.flatten())
+        dataJK['cp'] = (t3phi.flatten(), t3phierr.flatten())
+
+        return dataJK
 
     def associateFreq(self):
         inform('Assigning spatial frequencies...')
@@ -153,16 +284,22 @@ class data:
             self.vis2[i].vf = np.array(vf)
             self.vis2[i].base = np.sqrt(np.array(uf)**2 + np.array(vf)**2)
         # OIT3
-        for i in np.arange(len(self.vis)):
+        for i in np.arange(len(self.t3)):
             uf1, vf1, uf2, vf2 = [], [], [], []
-            u1 = self.vis[i].ucoord
-            v1 = self.vis[i].vcoord
-            effwave = self.vis[i].effwave
-            for j in np.arange(len(u)):
-                uf.append(u[j]/effwave[j])
-                vf.append(v[j]/effwave[j])
-            self.vis[i].uf = uf
-            self.vis[i].vf = vf
+            u1 = self.t3[i].u1coord
+            v1 = self.t3[i].v1coord
+            u2 = self.t3[i].u2coord
+            v2 = self.t3[i].v2coord
+            effwave = self.t3[i].effwave
+            for j in np.arange(len(u1)):
+                uf1.append(u1[j]/effwave[j])
+                vf1.append(v1[j]/effwave[j])
+                uf2.append(u2[j]/effwave[j])
+                vf2.append(v2[j]/effwave[j])
+            self.t3[i].uf1 = uf1
+            self.t3[i].vf1 = vf1
+            self.t3[i].uf2 = uf2
+            self.t3[i].vf2 = vf2
 
     def associateWave(self):
         inform('Assigning wavelengths...')
