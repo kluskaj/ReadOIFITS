@@ -63,7 +63,6 @@ def flatten(L):
         else:
             yield l
 
-
 class data:
     def __init__(self, dir='./', files='*fits'):
         self.files = files
@@ -122,138 +121,185 @@ class data:
                 mjdi = data.mjd
                 lami = data.effwave
 
-                V2.append(V2i[flag])
-                V2e.append(V2erri[flag])
-                u.append(ui[flag])
-                v.append(vi[flag])
-                mjd.append(mjdi[flag])
-                lam.append(lami[flag])
+                if removeflagged:
+                    V2.append(V2i[flag])
+                    V2e.append(V2erri[flag])
+                    u.append(ui[flag])
+                    v.append(vi[flag])
+                    mjd.append(mjdi[flag])
+                    lam.append(lami[flag])
+                else:
+                    V2.append(V2i)
+                    V2e.append(V2erri)
+                    u.append(ui)
+                    v.append(vi)
+                    mjd.append(mjdi)
+                    lam.append(lami)
         return V2, V2e, u, v, lam, mjd
 
     def givedataJK(self):
         dataJK = {}
         # OIVIS
         u, v, wave, visamp, visamperr, visphi, visphierr = [], [], [], [], [], [], []
-        for i in np.arange(len(self.vis)):
-            # fetching
-            ui = self.vis[i].uf
-            vi = self.vis[i].vf
-            wavei = self.vis[i].effwave
-            visampi = self.vis[i].visamp
-            visamperri = self.vis[i].visamperr
-            visphii = self.vis[i].visphi
-            visphierri = self.vis[i].visphierr
-            # formatting
-            ui = flatten(ui)
-            vi = flatten(vi)
-            wavei = flatten(wavei)
-            visampi = flatten(visampi)
-            visamperri = flatten(visamperri)
-            visphii = flatten(visphii)
-            visphierri = flatten(visphierri)
-            # loading
-            u.extend(ui)
-            v.extend(vi)
-            wave.extend(wavei)
-            visamp.extend(visampi)
-            visamperr.extend(visamperri)
-            visphi.extend(visphii)
-            visphierr.extend(visphierri)
-        # flattening and np.arraying
-        u = np.array(list(flatten(u)))
-        v = np.array(list(flatten(v)))
-        wave = np.array(list(flatten(wave)))
-        visamp = np.array(list(flatten(visamp)))
-        visphi = np.array(list(flatten(visphi)))
-        visamperr = np.array(list(flatten(visamperr)))
-        visphierr = np.array(list(flatten(visphierr)))
-        # writing in the dictionnary
-        dataJK['uvV'] = (u.flatten(), v.flatten())
-        dataJK['waveV'] = wave.flatten()
-        #vis = {}
-        #vis['visamp'], vis['visamperr'], vis['visphi'], vis['visphierr'] = visamp, visamperr, visphi, visphierr
-        dataJK['vis'] = (visamp.flatten(), visamperr.flatten(), visphi.flatten(), visphierr.flatten())
+        if self.vis != []:
+            for i in np.arange(len(self.vis)):
+                # fetching
+                ui = self.vis[i].uf
+                vi = self.vis[i].vf
+                wavei = self.vis[i].effwave
+                visampi = self.vis[i].visamp
+                visamperri = self.vis[i].visamperr
+                visphii = self.vis[i].visphi
+                visphierri = self.vis[i].visphierr
+                # formatting
+                ui = flatten(ui)
+                vi = flatten(vi)
+                wavei = flatten(wavei)
+                visampi = flatten(visampi)
+                visamperri = flatten(visamperri)
+                visphii = flatten(visphii)
+                visphierri = flatten(visphierri)
+                # loading
+                u.extend(ui)
+                v.extend(vi)
+                wave.extend(wavei)
+                visamp.extend(visampi)
+                visamperr.extend(visamperri)
+                visphi.extend(visphii)
+                visphierr.extend(visphierri)
+            # flattening and np.arraying
+            u = np.concatenate(np.array(list(flatten(u))))
+            v = np.concatenate(np.array(list(flatten(v))))
+            wave = np.concatenate(np.array(list(flatten(wave))))
+            visamp = np.concatenate(np.array(list(flatten(visamp))))
+            visphi = np.concatenate(np.array(list(flatten(visphi))))
+            visamperr = np.concatenate(np.array(list(flatten(visamperr))))
+            visphierr = np.concatenate(np.array(list(flatten(visphierr))))
+            # writing in the dictionnary
+            dataJK['uvV'] = (u.flatten(), v.flatten())
+            dataJK['waveV'] = wave.flatten()
+            #vis = {}
+            #vis['visamp'], vis['visamperr'], vis['visphi'], vis['visphierr'] = visamp, visamperr, visphi, visphierr
+            dataJK['vis'] = (visamp.flatten(), visamperr.flatten(), visphi.flatten(), visphierr.flatten())
+        else:
+            # writing in the dictionnary
+            dataJK['uvV'] = (np.array([]), np.array([]))
+            dataJK['waveV'] = np.array([])
+            #vis = {}
+            #vis['visamp'], vis['visamperr'], vis['visphi'], vis['visphierr'] = visamp, visamperr, visphi, visphierr
+            dataJK['vis'] = (np.array([]), np.array([]), np.array([]), np.array([]))
 
         # OIVIS2
         u, v, wave, vis2, vis2err = [], [], [], [], []
-        for i in np.arange(len(self.vis2)):
-            # fetching
-            ui = self.vis2[i].uf
-            vi = self.vis2[i].vf
-            wavei = self.vis2[i].effwave
-            vis2i = self.vis2[i].vis2data
-            vis2erri = self.vis2[i].vis2err
-            # formatting
-            ui = flatten(ui)
-            vi = flatten(vi)
-            wavei = flatten(wavei)
-            vis2i = flatten(vis2i)
-            vis2erri = flatten(vis2erri)
-            # loading
-            u.extend(ui)
-            v.extend(vi)
-            wave.extend(wavei)
-            vis2.extend(vis2i)
-            vis2err.extend(vis2erri)
-        # flattening and np.arraying
-        u = np.array(list(flatten(u)))
-        v = np.array(list(flatten(v)))
-        wave = np.array(list(flatten(wave)))
-        vis2 = np.array(list(flatten(vis2)))
-        vis2err = np.array(list(flatten(vis2err)))
+        u1, v1, u2, v2, u3, v3, wavecp, t3phi, t3phierr = [], [], [], [], [], [], [], [], []
+        if (self.vis2 != [] and self.t3 != []):
+            for i in np.arange(len(self.vis2)):
+                # fetching
+                ui = self.vis2[i].uf
+                vi = self.vis2[i].vf
+                wavei = self.vis2[i].effwave
+                vis2i = self.vis2[i].vis2data
+                vis2erri = self.vis2[i].vis2err
+                # formatting
+                ui = flatten(ui)
+                vi = flatten(vi)
+                wavei = flatten(wavei)
+                vis2i = flatten(vis2i)
+                vis2erri = flatten(vis2erri)
+                # loading
+                u.extend(ui)
+                v.extend(vi)
+                wave.extend(wavei)
+                vis2.extend(vis2i)
+                vis2err.extend(vis2erri)
+            # flattening and np.arraying
+            u = np.array(list(flatten(u)))
+            v = np.array(list(flatten(v)))
+            wave = np.array(list(flatten(wave)))
+            vis2 = np.array(list(flatten(vis2)))
+            vis2err = np.array(list(flatten(vis2err)))
+            try:
+                u = np.concatenate(u)
+                v = np.concatenate(v)
+                wave = np.concatenate(wave)
+                vis2 = np.concatenate(vis2)
+                vis2err = np.concatenate(vis2err)
+            except:
+                pass
 
         # OIT3
-        u1, v1, u2, v2, u3, v3, wavecp, t3phi, t3phierr = [], [], [], [], [], [], [], [], []
-        for i in np.arange(len(self.vis2)):
-            # fetching
-            u1i = self.t3[i].uf1
-            v1i = self.t3[i].vf1
-            u2i = self.t3[i].uf2
-            v2i = self.t3[i].vf2
-            u3i, v3i = [], []
-            for x1, x2, y1, y2 in zip(u1i, u2i, v1i, v2i):
-                u3i.extend(x1+x2)
-                v3i.extend(y1+y2)
-            wavecpi = self.t3[i].effwave
-            t3phii = self.t3[i].t3phi
-            t3phierri = self.t3[i].t3phierr
-            # formatting
-            u1i = flatten(u1i)
-            v1i = flatten(v1i)
-            u2i = flatten(u2i)
-            v2i = flatten(v2i)
-            u3i = flatten(u3i)
-            v3i = flatten(v3i)
-            wavecpi = flatten(wavecpi)
-            t3phii = flatten(t3phii)
-            t3phierri = flatten(t3phierri)
-            # loading
-            u1.extend(u1i)
-            v1.extend(v1i)
-            u2.extend(u2i)
-            v2.extend(v2i)
-            u3.extend(u3i)
-            v3.extend(v3i)
-            wavecp.extend(wavecpi)
-            t3phi.extend(t3phii)
-            t3phierr.extend(t3phierri)
-        # flattening and np.arraying
-        u1 = np.array(list(flatten(u1)))
-        v1 = np.array(list(flatten(v1)))
-        u2 = np.array(list(flatten(u2)))
-        v2 = np.array(list(flatten(v2)))
-        u3 = np.array(list(flatten(u3)))
-        v3 = np.array(list(flatten(v3)))
-        wavecp = np.array(list(flatten(wavecp)))
-        t3phi = np.array(list(flatten(t3phi)))
-        t3phierr = np.array(list(flatten(t3phierr)))
+            for i in np.arange(len(self.t3)):
+                # fetching
+                u1i = self.t3[i].uf1
+                v1i = self.t3[i].vf1
+                u2i = self.t3[i].uf2
+                v2i = self.t3[i].vf2
+                u3i, v3i = [], []
+                for x1, x2, y1, y2 in zip(u1i, u2i, v1i, v2i):
+                    u3i.extend(x1+x2)
+                    v3i.extend(y1+y2)
+                u3i = np.reshape(u3i, np.array(u1i).shape)
+                v3i = np.reshape(v3i, np.array(v1i).shape)
+                wavecpi = self.t3[i].effwave
+                t3phii = self.t3[i].t3phi
+                t3phierri = self.t3[i].t3phierr
+                # formatting
+                u1i = flatten(u1i)
+                v1i = flatten(v1i)
+                u2i = flatten(u2i)
+                v2i = flatten(v2i)
+                u3i = flatten(u3i)
+                v3i = flatten(v3i)
+                wavecpi = flatten(wavecpi)
+                t3phii = flatten(t3phii)
+                t3phierri = flatten(t3phierri)
+                # loading
+                u1.extend(u1i)
+                v1.extend(v1i)
+                u2.extend(u2i)
+                v2.extend(v2i)
+                u3.extend(u3i)
+                v3.extend(v3i)
+                wavecp.extend(wavecpi)
+                t3phi.extend(t3phii)
+                t3phierr.extend(t3phierri)
 
-        # writing in the dictionnary
-        dataJK['u'] = (u.flatten(), u1.flatten(), u2.flatten(), u3.flatten())
-        dataJK['v'] = (v.flatten(), v1.flatten(), v2.flatten(), v3.flatten())
-        dataJK['wave'] = (wave.flatten(), wavecp.flatten())
-        dataJK['v2'] = (vis2.flatten(), vis2err.flatten())
-        dataJK['cp'] = (t3phi.flatten(), t3phierr.flatten())
+            # flattening and np.arraying
+            u1 = np.array(list(flatten(u1)))
+            v1 = np.array(list(flatten(v1)))
+            u2 = np.array(list(flatten(u2)))
+            v2 = np.array(list(flatten(v2)))
+            u3 = np.array(list(flatten(u3)))
+            v3 = np.array(list(flatten(v3)))
+            wavecp = np.array(list(flatten(wavecp)))
+            t3phi = np.array(list(flatten(t3phi)))
+            t3phierr = np.array(list(flatten(t3phierr)))
+            try:
+                u1 = np.concatenate(u1)
+                v1 = np.concatenate(v1)
+                u2 = np.concatenate(u2)
+                v2 = np.concatenate(v2)
+                u3 = np.concatenate(u3)
+                v3 = np.concatenate(v3)
+                wavecp = np.concatenate(wavecp)
+                t3phi = np.concatenate(t3phi)
+                t3phierr = np.concatenate(t3phierr)
+            except:
+                pass
+
+            # writing in the dictionnary
+            dataJK['u'] = (u.flatten(), u1.flatten(), u2.flatten(), u3.flatten())
+            dataJK['v'] = (v.flatten(), v1.flatten(), v2.flatten(), v3.flatten())
+            dataJK['wave'] = (wave.flatten(), wavecp.flatten())
+            dataJK['v2'] = (vis2.flatten(), vis2err.flatten())
+            dataJK['cp'] = (t3phi.flatten(), t3phierr.flatten())
+        else:
+            # writing in the dictionnary
+            dataJK['u'] = (np.array([]), np.array([]), np.array([]), np.array([]))
+            dataJK['v'] = (np.array([]), np.array([]), np.array([]), np.array([]))
+            dataJK['wave'] = (np.array([]), np.array([]))
+            dataJK['v2'] = (np.array([]), np.array([]))
+            dataJK['cp'] = (np.array([]), np.array([]))
 
         return dataJK
 
