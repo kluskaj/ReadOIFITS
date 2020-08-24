@@ -51,8 +51,8 @@ def log(msg, dir):
     f.close()
 
 
-def read(dir, files):
-    dataset = data(dir, files)
+def read(dir, files, removeFlagged=True):
+    dataset = data(dir, files, removeFlagged=removeFlagged)
     return dataset
 
 
@@ -64,7 +64,7 @@ def flatten(L):
             yield l
 
 class data:
-    def __init__(self, dir='./', files='*fits'):
+    def __init__(self, dir='./', files='*fits', removeFlagged=True):
         self.files = files
         self.dir = dir
         self.target = []  # OITARGET()
@@ -78,7 +78,45 @@ class data:
         self.associateWave()
         self.associateFreq()
         self.extendMJD()
+        if removeFlagged:
+            self.filterFlagged()
         header('Success! \o/')
+
+    def filterFlagged(self):
+        inform('Removing flagged data...')
+        # OIVIS
+        for i in np.arange(len(self.vis)):
+            vis = self.vis[i]
+            flag = np.logical_not(vis.flag)
+            vis.mjd = vis.mjd[flag]
+            vis.visamp = vis.visamp[flag]
+            vis.visphi = vis.visphi[flag]
+            vis.visamperr = vis.visamperr[flag]
+            vis.visphierr = vis.visphierr[flag]
+            vis.uf = vis.uf[flag]
+            vis.vf = vis.vf[flag]
+        # OIVIS2
+        for i in np.arange(len(self.vis2)):
+            vis2 = self.vis2[i]
+            flag = np.logical_not(vis2.flag)
+            vis2.mjd = vis2.mjd[flag]
+            vis2.vis2data = vis2.vis2data[flag]
+            vis2.vis2err = vis2.vis2err[flag]
+            vis2.uf = vis2.uf[flag]
+            vis2.vf = vis2.vf[flag]
+        # OIT3
+        for i in np.arange(len(self.t3)):
+            t3 = self.t3[i]
+            flag = np.logical_not(t3.flag)
+            t3.mjd = t3.mjd[flag]
+            t3.t3amp = t3.t3amp[flag]
+            t3.t3amperr = t3.t3amperr[flag]
+            t3.t3phi = t3.t3phi[flag]
+            t3.t3phierr = t3.t3phierr[flag]
+            t3.uf1 = t3.uf1[flag]
+            t3.vf1 = t3.vf1[flag]
+            t3.uf2 = t3.uf2[flag]
+            t3.vf2 = t3.vf2[flag]
 
     def extendMJD(self):
         inform('Assigning mjd...')
@@ -342,10 +380,10 @@ class data:
                 vf1.append(v1[j]/effwave[j])
                 uf2.append(u2[j]/effwave[j])
                 vf2.append(v2[j]/effwave[j])
-            self.t3[i].uf1 = uf1
-            self.t3[i].vf1 = vf1
-            self.t3[i].uf2 = uf2
-            self.t3[i].vf2 = vf2
+            self.t3[i].uf1 = np.array(uf1)
+            self.t3[i].vf1 = np.array(vf1)
+            self.t3[i].uf2 = np.array(uf2)
+            self.t3[i].vf2 = np.array(vf2)
 
     def associateWave(self):
         inform('Assigning wavelengths...')
