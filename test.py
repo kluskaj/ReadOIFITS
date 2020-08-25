@@ -16,7 +16,6 @@ files = '*LM_*fits'
 # PIONIER#
 dir = '/Users/jacques/Work/Targets/IRAS08544-4431/data/'
 files = '*fits'
-data = oifits.read(dir, files)
 
 
 # GRAVITY#
@@ -46,3 +45,6 @@ files = 'ZCMa_0363mrg.oifits'
 dir = '/Users/jacques/Work/Targets/CLLac/'
 files = '*fits'
 # data = oifits.read(dir, files)
+data = oifits.read(dir, files)
+data.plotV2CP(lines=True)
+data.plotV2CP(lines=False)

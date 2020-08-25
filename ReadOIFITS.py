@@ -2,6 +2,7 @@ import astropy.io.fits as fits
 import os
 import fnmatch
 import numpy as np
+import matplotlib.pyplot as plt
 
 # OIFITS READING MODULE
 
@@ -63,6 +64,20 @@ def flatten(L):
         else:
             yield l
 
+
+def Bases(data):
+    # gives you back the bases lengths for V2 and cpres
+    u, u1, u2, u3 = data['u']
+    v, v1, v2, v3 = data['v']
+    base = np.sqrt(u**2 + v**2)
+    B1 = np.sqrt(u1**2 + v1**2)
+    B2 = np.sqrt(u2**2 + v2**2)
+    B3 = np.sqrt(u3**2 + v3**2)
+    Bmax = np.maximum(B1, B2, B3)
+
+    return base, Bmax
+
+
 class data:
     def __init__(self, dir='./', files='*fits', removeFlagged=True):
         self.files = files
@@ -82,6 +97,130 @@ class data:
             self.filterFlagged()
         header('Success! \o/')
 
+    def plotV2CP(self, save=False, name='Data.pdf', V2sigclip=1, CPsigclip=180, Blim=0, CPext=200, V2min=0.0, V2max=1.0, xlog=False, ylog=False, lines=True):
+        # Plot the vis2 and cp from the data and the model
+        data = self.givedataJK()
+
+        # Actual plot
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+
+        fig.subplots_adjust(right=0.8)
+        cax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+
+        if lines:
+            V2data, V2err, u, v, waveV2 = ListV2(data)
+            CPdata, CPerr, u1, v1, u2, v2, u3, v3, waveCP = ListCP(data)
+
+            base=[]
+            for ui, vi, wavei in zip (u, v, waveV2):
+                basei = np.sqrt(np.power(ui, 2) + np.power(vi, 2))/wavei
+                base.append(basei*1e-6)
+
+            b1, b2, b3, Bmax = [], [], [], []
+            for u1i, v1i, u2i, v2i, u3i, v3i, wavei in zip(u1, v1, u2, v2, u3, v3, waveCP):
+                b1i = np.sqrt(np.power(u1i, 2) + np.power(v1i, 2))/wavei
+                b2i = np.sqrt(np.power(u2i, 2) + np.power(v2i, 2))/wavei
+                b3i = np.sqrt(np.power(u3i, 2) + np.power(v3i, 2))/wavei
+                Bmaxi = np.maximum(b1i, b2i, b3i)
+                Bmax.append(Bmaxi*1e-6)
+
+            for basei, V2i in zip(base, V2data):
+                ax1.plot(basei, V2i)
+
+        else:
+            waveV2, waveCP, base, Bmax, V2data, V2err, CPdata, CPerr = Load(data)
+            maskv2 = V2err < V2sigclip  # V2err < 0.2 and
+            maskcp = CPerr < CPsigclip
+
+            sc = ax1.scatter(base[maskv2], V2data[maskv2], s=0.1, c=waveV2[maskv2], cmap='gist_rainbow_r')
+            clb = fig.colorbar(sc, cax=cax)
+            clb.set_label(r'Wavelength ($\mu$m)', rotation=270, labelpad=15)
+            a, b, c = ax1.errorbar(base[maskv2], V2data[maskv2], yerr=V2err[maskv2], marker='', elinewidth=0.05, ls='', zorder=0)
+            color = clb.to_rgba(waveV2[maskv2])
+            c[0].set_color(color)
+
+        if Blim == 0:
+            if lines:
+                maxi = []
+                for b in base:
+                    maxi.append(np.max(b))
+                Blim = 1.05 * max(maxi)
+            else:
+                Blim = 1.05 * np.max(base)
+
+        ax1.axhline(0)
+        ax1.set_ylim(V2min, V2max)
+        ax1.set_xlim(0, Blim)
+
+        if xlog:
+            ax1.set_xlim(min(base)-1, Blim)
+            ax1.set_xscale('log')
+        if ylog:
+            ax1.set_ylim(0.9 * np.min(np.abs(V2data)), 1)
+            ax1.set_yscale('log')
+
+        ax1.set_xlabel(r'B (M$\lambda$)', fontsize=8)
+        ax1.set_title('Squared visibilities')
+        # ax2.scatter(Bmax, CPdata, c=color, cmap='gist_rainbow_r')
+
+        ax2.axhline(y=0, ls='--', c='grey', lw=0.3)
+        if lines:
+            for bmaxi, CPi in zip(Bmax, CPdata):
+                ax2.plot(bmaxi, CPi)
+        else:
+            sc = ax2.scatter(Bmax[maskcp], CPdata[maskcp], s=0.1, c=waveCP[maskcp], cmap='gist_rainbow_r')
+            a2, b2, c2 = ax2.errorbar(Bmax[maskcp], CPdata[maskcp], yerr=CPerr[maskcp], elinewidth=0.05, marker='', ls='', zorder=0)
+            colorCP = clb.to_rgba(waveCP[maskcp])
+            c2[0].set_color(colorCP)
+
+        ax2.set_xlabel(r'B$_\mathrm{max}$ (M$\lambda$)', fontsize=8)
+        ax2.set_title('Closure phases')
+        ax2.set_xlim(0, Blim)
+        ax2.set_ylim(-CPext, CPext)
+        if xlog:
+            ax2.set_xlim(min(Bmax)-1, Blim)
+            ax2.set_xscale('log')
+
+        if save:
+            plt.savefig(dir + name + '_Data.pdf')
+        else:
+            plt.show()
+
+        u, u1, u2, u3 = data['u']
+        v, v1, v2, v3 = data['v']
+
+        # Actual plot
+        fig, ax = plt.subplots(1, 1)
+        cax = fig.add_axes(ax)
+        if lines:
+            waveV2, waveCP, base, Bmax, V2data, V2err, CPdata, CPerr = Load(data)
+            base /= waveV2
+            u /= waveV2
+            v /= waveV2
+        else:
+            u *= 1e-6
+            v *= 1e-6
+        sc = ax.scatter([u, -u], [v,-v], c=[waveV2, waveV2], s=0.1, cmap='gist_rainbow_r')
+        # sc = ax.scatter(-u, -v, c=waveV2, s=0.5, cmap='gist_rainbow_r')
+        clb = fig.colorbar(sc)
+        clb.set_label(r'Wavelength ($\mu$m)', rotation=270, labelpad=15)
+        ax.set_xlabel('u (M$\lambda$)', fontsize=8)
+        ax.set_ylabel('v (M$\lambda$)', fontsize=8)
+        ax.set_title('uv plane')
+        ax.set_ylim(-Blim, Blim)
+        ax.set_xlim(Blim, -Blim)
+        fig.tight_layout()
+        # ax.text(0, 80, name, fontsize=12)
+        # ax2.scatter(Bmax, CPdata, c=color, cmap='gist_rainbow_r')
+
+        if save:
+            plt.savefig(dir + name + '_Datauv.pdf')
+        else:
+            plt.show()
+
+        plt.close()
+
+
     def filterFlagged(self):
         inform('Removing flagged data...')
         # OIVIS
@@ -93,6 +232,7 @@ class data:
             vis.visphi = vis.visphi[flag]
             vis.visamperr = vis.visamperr[flag]
             vis.visphierr = vis.visphierr[flag]
+            vis.effwave = vis.effwave[flag]
             vis.uf = vis.uf[flag]
             vis.vf = vis.vf[flag]
         # OIVIS2
@@ -102,6 +242,7 @@ class data:
             vis2.mjd = vis2.mjd[flag]
             vis2.vis2data = vis2.vis2data[flag]
             vis2.vis2err = vis2.vis2err[flag]
+            vis2.effwave = vis2.effwave[flag]
             vis2.uf = vis2.uf[flag]
             vis2.vf = vis2.vf[flag]
         # OIT3
@@ -113,6 +254,7 @@ class data:
             t3.t3amperr = t3.t3amperr[flag]
             t3.t3phi = t3.t3phi[flag]
             t3.t3phierr = t3.t3phierr[flag]
+            t3.effwave = t3.effwave[flag]
             t3.uf1 = t3.uf1[flag]
             t3.vf1 = t3.vf1[flag]
             t3.uf2 = t3.uf2[flag]
@@ -206,13 +348,23 @@ class data:
                 visphi.extend(visphii)
                 visphierr.extend(visphierri)
             # flattening and np.arraying
-            u = np.concatenate(np.array(list(flatten(u))))
-            v = np.concatenate(np.array(list(flatten(v))))
-            wave = np.concatenate(np.array(list(flatten(wave))))
-            visamp = np.concatenate(np.array(list(flatten(visamp))))
-            visphi = np.concatenate(np.array(list(flatten(visphi))))
-            visamperr = np.concatenate(np.array(list(flatten(visamperr))))
-            visphierr = np.concatenate(np.array(list(flatten(visphierr))))
+            u = np.array(list(flatten(u)))
+            v = np.array(list(flatten(v)))
+            wave = np.array(list(flatten(wave)))
+            visamp = np.array(list(flatten(visamp)))
+            visphi = np.array(list(flatten(visphi)))
+            visamperr = np.array(list(flatten(visamperr)))
+            visphierr = np.array(list(flatten(visphierr)))
+            try:
+                u = np.concatenate(u)
+                v = np.concatenate(v)
+                wave = np.concatenate(wave)
+                visamp = np.concatenate(visamp)
+                visphi = np.concatenate(visphi)
+                visamperr = np.concatenate(visamperr)
+                visphierr = np.concatenate(visphierr)
+            except:
+                pass
             # writing in the dictionnary
             dataJK['uvV'] = (u.flatten(), v.flatten())
             dataJK['waveV'] = wave.flatten()
@@ -274,8 +426,8 @@ class data:
                 v2i = self.t3[i].vf2
                 u3i, v3i = [], []
                 for x1, x2, y1, y2 in zip(u1i, u2i, v1i, v2i):
-                    u3i.extend(x1+x2)
-                    v3i.extend(y1+y2)
+                    u3i.extend([x1+x2])
+                    v3i.extend([y1+y2])
                 u3i = np.reshape(u3i, np.array(u1i).shape)
                 v3i = np.reshape(v3i, np.array(v1i).shape)
                 wavecpi = self.t3[i].effwave
@@ -701,3 +853,203 @@ class OIFLUX:
         self.fluxerr = fluxerr
         self.flag = flag
         self.calstat = calstat
+
+
+def ListV2 (data):
+
+    u, v, wavev2, wavecp = DataUnpack(data)
+    V2, V2err, CP, CPerr = GiveDataValues(data)
+
+    nV2 = len(V2)
+
+    u, u1, u2, u3 = u
+    v, v1, v2, v3 = v
+
+    u *= wavev2
+    v *= wavev2
+
+    ubase = u[0]
+    vbase = v[0]
+    newV2 = []
+    newV2err = []
+    newwave = []
+    newu = []
+    newv = []
+    tmpV2 = []
+    tmpV2err = []
+    tmpwave = []
+    tmpu = []
+    tmpv = []
+    for i in np.arange(nV2):
+        #print (u[i] - ubase)
+        if np.abs(u[i] - ubase) < 1e-5 and np.abs(v[i]- vbase) < 1e-5:
+            tmpV2.append(V2[i])
+            tmpV2err.append(V2err[i])
+            tmpu.append(u[i])
+            tmpv.append(v[i])
+            tmpwave.append(wavev2[i])
+        else:
+            newV2.extend([tmpV2])
+            newV2err.extend([tmpV2err])
+            newu.extend([tmpu])
+            newv.extend([tmpv])
+            newwave.extend([tmpwave])
+            ubase = u[i]
+            vbase = v[i]
+            tmpV2 = []
+            tmpV2err = []
+            tmpwave = []
+            tmpu = []
+            tmpv = []
+            tmpV2.append(V2[i])
+            tmpV2err.append(V2err[i])
+            tmpu.append(u[i])
+            tmpv.append(v[i])
+            tmpwave.append(wavev2[i])
+
+    newV2.extend([tmpV2])
+    newV2err.extend([tmpV2err])
+    newu.extend([tmpu])
+    newv.extend([tmpv])
+    newwave.extend([tmpwave])
+
+    return newV2, newV2err, newu, newv, newwave
+
+
+def DataUnpack(data):
+
+    # Unpacking the data
+    u = data['u']
+    v = data['v']
+    wave = data['wave']
+    # vis2, vis2err = data['v2']
+    # cp, cperr = data['cp']
+    wavev2, wavecp = wave
+
+    return u, v, wavev2, wavecp
+
+
+def GiveDataValues(data):
+
+    V2, V2err = data['v2']
+    CP, CPerr = data['cp']
+
+    return V2, V2err, CP, CPerr
+
+def ListCP (data):
+
+    u, v, wavev2, wavecp = DataUnpack(data)
+    V2, V2err, CP, CPerr = GiveDataValues(data)
+
+    nCP = len(CP)
+
+    u, u1, u2, u3 = u
+    v, v1, v2, v3 = v
+
+    u1 *= wavecp
+    v1 *= wavecp
+    u2 *= wavecp
+    v2 *= wavecp
+    u3 *= wavecp
+    v3 *= wavecp
+
+    u1base = u1[0]
+    v1base = v1[0]
+    u2base = u2[0]
+    v2base = v2[0]
+    newCP = []
+    newCPerr = []
+    newwave = []
+    newu1 = []
+    newv1 = []
+    newu2 = []
+    newv2 = []
+    newu3 = []
+    newv3 = []
+    tmpCP = []
+    tmpCPerr = []
+    tmpwave = []
+    tmpu1 = []
+    tmpv1 = []
+    tmpu2 = []
+    tmpv2 = []
+    tmpu3 = []
+    tmpv3 = []
+    for i in np.arange(nCP):
+        #print (u[i] - ubase)
+        if np.abs(u1[i] - u1base) < 1e-5 and np.abs(v1[i]- v1base) < 1e-5 and np.abs(u2[i] - u2base) < 1e-5 and np.abs(v2[i]- v2base) < 1e-5:
+            tmpCP.append(CP[i])
+            tmpCPerr.append(CPerr[i])
+            tmpu1.append(u1[i])
+            tmpv1.append(v1[i])
+            tmpu2.append(u2[i])
+            tmpv2.append(v2[i])
+            tmpu3.append(u3[i])
+            tmpv3.append(v3[i])
+            tmpwave.append(wavecp[i])
+        else:
+            newCP.extend([tmpCP])
+            newCPerr.extend([tmpCPerr])
+            newu1.extend([tmpu1])
+            newv1.extend([tmpv1])
+            newu2.extend([tmpu2])
+            newv2.extend([tmpv2])
+            newu3.extend([tmpu3])
+            newv3.extend([tmpv3])
+            newwave.extend([tmpwave])
+            u1base = u1[i]
+            v1base = v1[i]
+            u2base = u2[i]
+            v2base = v2[i]
+            tmpCP = []
+            tmpCPerr = []
+            tmpwave = []
+            tmpu = []
+            tmpv = []
+            tmpu1 = []
+            tmpv1 = []
+            tmpu2 = []
+            tmpv2 = []
+            tmpu3 = []
+            tmpv3 = []
+            tmpCP.append(CP[i])
+            tmpCPerr.append(CPerr[i])
+            tmpu1.append(u1[i])
+            tmpv1.append(v1[i])
+            tmpu2.append(u2[i])
+            tmpv2.append(v2[i])
+            tmpu3.append(u3[i])
+            tmpv3.append(v3[i])
+            tmpwave.append(wavecp[i])
+
+    print(np.array(tmpCP).shape, np.array(tmpu1).shape)
+    newCP.extend([tmpCP])
+    newCPerr.extend([tmpCPerr])
+    newu1.extend([tmpu1])
+    newv1.extend([tmpv1])
+    newu2.extend([tmpu2])
+    newv2.extend([tmpv2])
+    newu3.extend([tmpu3])
+    newv3.extend([tmpv3])
+    newwave.extend([tmpwave])
+
+    return newCP, newCPerr, newu1, newv1, newu2, newv2, newu3, newv3, newwave
+
+
+def Load(data):
+    # Loading the dataset
+    wave = data['wave']
+    V2data, V2err = data['v2']
+    CPdata, CPerr = data['cp']
+    base, Bmax = Bases(data)
+
+    # Setting things for the plot
+    base *= 1e-6
+    Bmax *= 1e-6
+
+    waveCP = wave[1]
+    waveV2 = wave[0]
+    waveV2 *= 1e6
+    waveCP *= 1e6
+
+    return waveV2, waveCP, base, Bmax, V2data, V2err, CPdata, CPerr
