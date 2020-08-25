@@ -7,6 +7,15 @@ import numpy as np
 dir = '/Users/jacques/Work/Targets/IRAS08544-4431/MATISSE/2020/Iter1_OIFITS_CALIBRATED/MERGED/'
 files = '*N_*fits'
 
+# Load the data
+data = oifits.read(dir, files)
+
+# Plot V2, CP and uv-planes
+data.plotV2CP(lines=False)
+
+# obtain the same structure used in previous scripts
+dataJK = data.givedataJK()
+
 
 # MATISSE L#
 files = '*LM_*fits'
@@ -45,6 +54,3 @@ files = 'ZCMa_0363mrg.oifits'
 dir = '/Users/jacques/Work/Targets/CLLac/'
 files = '*fits'
 # data = oifits.read(dir, files)
-data = oifits.read(dir, files)
-data.plotV2CP(lines=True)
-data.plotV2CP(lines=False)
