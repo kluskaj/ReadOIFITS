@@ -103,7 +103,7 @@ class data:
         # creat primary hdu
         hdr = fits.Header()
         hdr['COMMENT'] = 'Generated with ReadOIFITS'
-        primary = fits.PrimaryHDU( [] )
+        primary = fits.PrimaryHDU( [], header=hdr )
         hdus.append(primary)
         # write OI_TARGET
         for i in np.arange(len(self.target)):
