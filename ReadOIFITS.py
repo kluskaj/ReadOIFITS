@@ -151,7 +151,7 @@ class data:
             hdr['DATE-OBS'] = self.vis[i].dateobs
             targetid = fits.Column(name='TARGET_ID', format='1I', array=self.vis[i].targetid)
             mjd = fits.Column(name='MJD', format='1D', array=self.vis[i].mjd[:, 0])
-            nw = len(np.ravel(self.vis[i].visamp))
+            nw = self.vis[i].visamp.shape[1]
             visamp = fits.Column(name='VISAMP', format=str(nw)+'D', array=self.vis[i].visamp)
             visamperr = fits.Column(name='VISAMPERR', format=str(nw)+'D', array=self.vis[i].visamperr)
             visphi = fits.Column(name='VISPHI', format=str(nw)+'D', array=self.vis[i].visphi)
@@ -173,7 +173,7 @@ class data:
             hdr['DATE-OBS'] = self.vis2[i].dateobs
             targetid = fits.Column(name='TARGET_ID', format='1I', array=self.vis2[i].targetid)
             mjd = fits.Column(name='MJD', format='1D', array=self.vis2[i].mjd[:, 0])
-            nw = len(np.ravel(self.vis2[i].vis2data))
+            nw = self.vis2[i].vis2data.shape[1]
             vis2 = fits.Column(name='VIS2DATA', format=str(nw)+'D', array=self.vis2[i].vis2data)
             vis2err = fits.Column(name='VIS2ERR', format=str(nw)+'D', array=self.vis2[i].vis2err)
             ucoord = fits.Column(name='UCOORD', format='1D', array=self.vis2[i].ucoord)
@@ -193,7 +193,7 @@ class data:
             hdr['DATE-OBS'] = self.t3[i].dateobs
             targetid = fits.Column(name='TARGET_ID', format='1I', array=self.t3[i].targetid)
             mjd = fits.Column(name='MJD', format='1D', array=self.t3[i].mjd[:, 0])
-            nw = len(np.ravel(self.t3[i].t3phi))
+            nw = self.t3[i].t3phi.shape[1]
             t3amp = fits.Column(name='T3AMP', format=str(nw)+'D', array=self.t3[i].t3amp)
             t3amperr = fits.Column(name='T3AMPERR', format=str(nw)+'D', array=self.t3[i].t3amperr)
             t3phi = fits.Column(name='T3PHI', format=str(nw)+'D', array=self.t3[i].t3phi)
@@ -218,7 +218,7 @@ class data:
             hdr['CALSTAT'] = self.flux[i].calstat
             targetid = fits.Column(name='TARGET_ID', format='1I', array=self.flux[i].targetid)
             mjd = fits.Column(name='MJD', format='1D', array=self.flux[i].mjd)
-            nw = len(np.ravel(self.flux[i].fluxdata))
+            nw = self.flux[i].fluxdata.shape[1]
             flux = fits.Column(name='FLUXDATA', format=str(nw)+'D', array=self.flux[i].fluxdata)
             fluxerr = fits.Column(name='FLUXERR', format=str(nw)+'D', array=self.flux[i].fluxerr)
             staindex = fits.Column(name='STA_INDEX', format='2I', array=self.flux[i].staid)
