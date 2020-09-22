@@ -3,7 +3,9 @@ import os
 import fnmatch
 import numpy as np
 import matplotlib.pyplot as plt
-
+from pylab import *
+from sklearn import linear_model
+from scipy import signal
 # OIFITS READING MODULE
 
 
@@ -231,15 +233,85 @@ class data:
         hdu = fits.HDUList( hdus )
         hdu.writeto(dir+file, overwrite=overwrite)
 
-    def plotV2CP(self, save=False, name='Data.pdf', V2sigclip=1, CPsigclip=180, Blim=0, CPext=200, V2min=0.0, V2max=1.0, xlog=False, ylog=False, lines=True):
+    def plotVis(self, save=False, name='Data', poly=5):
+
+        for i in np.arange(len(self.vis)):
+            vis = self.vis[i]
+            nplots = vis.visamp.shape[0]
+            for a in range(nplots):
+                subplots_adjust(hspace=0.0)
+                if a == 0:
+                    ax1 = subplot(nplots,1,a+1)
+                    plt.title('Visibility amplitude')
+                else:
+                    ax1 = subplot(nplots,1,a+1, sharex=ax1)
+                x = vis.effwave[a,:]*1e6
+                x_test = x  # np.linspace( np.min(vis.effwave[a,:]*1e6), np.max(vis.effwave[a,:]*1e6), 100 )
+                VA = vis.visamp[a,:]
+                X = np.array([x**i for i in range(poly+1)]).T
+                X_test = np.array([x_test**i for i in range(poly+1)]).T
+                regr = linear_model.LinearRegression()
+                regr.fit(X, VA)
+                plt.plot(X, regr.predict(X_test), label=str(poly)+'th order', lw=1, c='orange')
+
+                ax1.plot(vis.effwave[a,:]*1e6, vis.visamp[a,:], lw=0.3, c='blue')
+                ax1.axvline(x=2.1655, c='red', lw=0.5)
+                ax1.axvline(x=2.2935, c='green', lw=0.5)
+                ax1.axvline(x=2.3227, c='green', lw=0.5)
+                ax1.axvline(x=2.3535, c='green', lw=0.5)
+                ax1.axvline(x=2.3829, c='green', lw=0.5)
+
+                medVA = median(VA)
+                rmsVA = np.std(VA)
+                plt.ylim(medVA-3*rmsVA, medVA+3*rmsVA)
+                plt.xlim(np.min(vis.effwave[a,:]*1e6), np.max(vis.effwave[a,:]*1e6))
+
+            plt.show()
+            plt.savefig(name+'_visamp.pdf')
+
+            for a in range(nplots):
+                subplots_adjust(hspace=0.0)
+                if a == 0:
+                    ax1 = subplot(nplots,1,a+1)
+                    plt.title('Differential phase')
+                else:
+                    ax1 = subplot(nplots,1,a+1, sharex=ax1)
+                x = vis.effwave[a,:]*1e6
+                x_test = x  # np.linspace( np.min(vis.effwave[a,:]*1e6), np.max(vis.effwave[a,:]*1e6), 100 )
+                VA = vis.visphi[a,:]
+                X = np.array([x**i for i in range(poly+1)]).T
+                X_test = np.array([x_test**i for i in range(poly+1)]).T
+                regr = linear_model.LinearRegression()
+                regr.fit(X, VA)
+                plt.plot(X, regr.predict(X_test), label=str(poly)+'th order', lw=1, c='orange')
+                ax1.plot(vis.effwave[a,:]*1e6, vis.visphi[a,:], lw=0.4)
+                ax1.plot(vis.effwave[a,:]*1e6, vis.visphi[a,:]*0, '--', c='gray')
+                ax1.axvline(x=2.1655, c='red', lw=0.5)
+                ax1.axvline(x=2.2935, c='green', lw=0.5)
+                ax1.axvline(x=2.3227, c='green', lw=0.5)
+                ax1.axvline(x=2.3535, c='green', lw=0.5)
+                ax1.axvline(x=2.3829, c='green', lw=0.5)
+                VA = vis.visphi[a,:]
+                medVA = median(VA)
+                rmsVA = np.std(VA)
+                plt.ylim(medVA-3*rmsVA, medVA+3*rmsVA)
+                plt.xlim(np.min(vis.effwave[a,:]*1e6), np.max(vis.effwave[a,:]*1e6))
+
+            plt.show()
+            plt.savefig(name+'_'+str(i)+'_visphi.pdf')
+
+
+
+    def plotV2CP(self, save=False, name='Data.pdf', V2sigclip=1, CPsigclip=180, Blim=0, CPext=200, V2min=0.0, V2max=1.0, xlog=False, ylog=False, lines=True, smooth=0):
         # Plot the vis2 and cp from the data and the model
         data = self.givedataJK()
 
         # Actual plot
         fig, (ax1, ax2) = plt.subplots(1, 2)
 
-        fig.subplots_adjust(right=0.8)
-        cax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+        if lines==False:
+            fig.subplots_adjust(right=0.8)
+            cax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
 
         if lines:
             V2data, V2err, u, v, waveV2 = ListV2(data)
@@ -259,7 +331,12 @@ class data:
                 Bmax.append(Bmaxi*1e-6)
 
             for basei, V2i in zip(base, V2data):
-                ax1.plot(basei, V2i)
+                if smooth != 0:
+                    win = signal.hann(smooth)
+                    V2ic = signal.convolve(V2i, win, mode='same') / sum(win)
+                    ax1.plot(basei, V2ic, lw=0.05)
+                else:
+                    ax1.plot(basei, V2i, lw=0.05)
 
         else:
             waveV2, waveCP, base, Bmax, V2data, V2err, CPdata, CPerr = Load(data)
@@ -290,7 +367,7 @@ class data:
             ax1.set_xlim(min(base)-1, Blim)
             ax1.set_xscale('log')
         if ylog:
-            ax1.set_ylim(0.9 * np.min(np.abs(V2data)), 1)
+            ax1.set_ylim(0.9 * min(min(V2data)), 1)
             ax1.set_yscale('log')
 
         ax1.set_xlabel(r'B (M$\lambda$)', fontsize=8)
@@ -300,7 +377,13 @@ class data:
         ax2.axhline(y=0, ls='--', c='grey', lw=0.3)
         if lines:
             for bmaxi, CPi in zip(Bmax, CPdata):
-                ax2.plot(bmaxi, CPi)
+                if smooth != 0:
+                    win = signal.hann(smooth)
+                    CPic = signal.convolve(CPi, win, mode='same') / sum(win)
+                    ax2.plot(bmaxi, CPic, lw=0.05)
+                else:
+                    ax2.plot(bmaxi, CPi, lw=0.05)
+
         else:
             sc = ax2.scatter(Bmax[maskcp], CPdata[maskcp], s=0.1, c=waveCP[maskcp], cmap='gist_rainbow_r')
             a2, b2, c2 = ax2.errorbar(Bmax[maskcp], CPdata[maskcp], yerr=CPerr[maskcp], elinewidth=0.05, marker='', ls='', zorder=0)
@@ -316,7 +399,7 @@ class data:
             ax2.set_xscale('log')
 
         if save:
-            plt.savefig(dir + name + '_Data.pdf')
+            plt.savefig(self.dir+ name + '_Data.pdf')
         else:
             plt.show()
 
@@ -348,7 +431,7 @@ class data:
         # ax2.scatter(Bmax, CPdata, c=color, cmap='gist_rainbow_r')
 
         if save:
-            plt.savefig(dir + name + '_Datauv.pdf')
+            plt.savefig(self.dir + name + '_Datauv.pdf')
         else:
             plt.show()
 
@@ -1164,7 +1247,7 @@ def ListCP (data):
             tmpv3.append(v3[i])
             tmpwave.append(wavecp[i])
 
-    print(np.array(tmpCP).shape, np.array(tmpu1).shape)
+    #print(np.array(tmpCP).shape, np.array(tmpu1).shape)
     newCP.extend([tmpCP])
     newCPerr.extend([tmpCPerr])
     newu1.extend([tmpu1])
