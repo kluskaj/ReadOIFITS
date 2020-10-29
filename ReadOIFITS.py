@@ -54,8 +54,8 @@ def log(msg, dir):
     f.close()
 
 
-def read(dir, files, removeFlagged=True):
-    dataset = data(dir, files, removeFlagged=removeFlagged)
+def read(dir, files, removeFlagged=True, cleanFlagged=False):
+    dataset = data(dir, files, removeFlagged=removeFlagged, cleanFlagged=cleanFlagged)
     return dataset
 
 
@@ -81,7 +81,7 @@ def Bases(data):
 
 
 class data:
-    def __init__(self, dir='./', files='*fits', removeFlagged=True):
+    def __init__(self, dir='./', files='*fits', removeFlagged=True, cleanFlagged=False):
         self.files = files
         self.dir = dir
         self.target = []  # OITARGET()
@@ -97,6 +97,8 @@ class data:
         self.extendMJD()
         if removeFlagged:
             self.filterFlagged()
+        if cleanFlagged:
+            self.cleanFlagged()
         header('Success! \o/')
 
     def writeOIFITS(self, dir, file, overwrite=False):
@@ -174,7 +176,9 @@ class data:
             hdr['ARRNAME'] = self.vis2[i].arrname
             hdr['DATE-OBS'] = self.vis2[i].dateobs
             targetid = fits.Column(name='TARGET_ID', format='1I', array=self.vis2[i].targetid)
+            print(self.vis2[i].mjd.shape)
             mjd = fits.Column(name='MJD', format='1D', array=self.vis2[i].mjd[:, 0])
+
             nw = self.vis2[i].vis2data.shape[1]
             vis2 = fits.Column(name='VIS2DATA', format=str(nw)+'D', array=self.vis2[i].vis2data)
             vis2err = fits.Column(name='VIS2ERR', format=str(nw)+'D', array=self.vis2[i].vis2err)
@@ -223,7 +227,7 @@ class data:
             nw = self.flux[i].fluxdata.shape[1]
             flux = fits.Column(name='FLUXDATA', format=str(nw)+'D', array=self.flux[i].fluxdata)
             fluxerr = fits.Column(name='FLUXERR', format=str(nw)+'D', array=self.flux[i].fluxerr)
-            staindex = fits.Column(name='STA_INDEX', format='2I', array=self.flux[i].staid)
+            staindex = fits.Column(name='STA_INDEX', format='1I', array=self.flux[i].staid)
             flag = fits.Column(name='FLAG', format=str(nw)+'L', array=self.flux[i].flag)
             cols = fits.ColDefs([targetid, mjd, flux, fluxerr, staindex, flag])
             oiflux = fits.BinTableHDU.from_columns(cols, header=hdr)
@@ -476,6 +480,42 @@ class data:
             t3.vf1 = t3.vf1[flag]
             t3.uf2 = t3.uf2[flag]
             t3.vf2 = t3.vf2[flag]
+
+    def cleanFlagged(self):
+        inform('Cleaning flagged data...')
+        # OIVIS
+        for i in np.arange(len(self.vis)):
+            vis = self.vis[i]
+            for j in np.arange(len(vis.visamperr)):
+                for k in np.arange(len(vis.visamperr[j])):
+                    if vis.visamperr[j][k] <= 0 :
+                        vis.visamperr[j][k] = 10**6
+                    if vis.visphierr[j][k] <= 0 :
+                        vis.visphierr[j][k] = 10**6
+        # OIVIS2
+        for i in np.arange(len(self.vis2)):
+            vis2 = self.vis2[i]
+            for j in np.arange(len(vis2.vis2err)):
+                for k in np.arange(len(vis2.vis2err[j])):
+                    if vis2.vis2err[j][k] <= 0 :
+                        vis2.vis2err[j][k] = 10**6
+
+        # OIT3
+        for i in np.arange(len(self.t3)):
+            t3 = self.t3[i]
+            for j in np.arange(len(t3.t3amperr)):
+                for k in np.arange(len(t3.t3amperr[j])):
+                    if t3.t3amperr[j][k] <= 0 :
+                        t3.t3amperr[j][k] = 10**6
+                    if t3.t3phierr[j][k] <= 0 :
+                        t3.t3phierr[j][k] = 10**6
+        # OIFLUX
+        for i in np.arange(len(self.flux)):
+            flux = self.flux[i]
+            for j in np.arange(len(flux.fluxerr)):
+                for k in np.arange(len(flux.fluxerr[j])):
+                    if flux.fluxerr[j][k] <= 0 :
+                        flux.fluxerr[j][k] = 10**6
 
     def extendMJD(self):
         inform('Assigning mjd...')
