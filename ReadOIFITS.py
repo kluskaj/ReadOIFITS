@@ -338,9 +338,9 @@ class data:
                 if smooth != 0:
                     win = signal.hann(smooth)
                     V2ic = signal.convolve(V2i, win, mode='same') / sum(win)
-                    ax1.plot(basei, V2ic, lw=0.05)
+                    ax1.plot(basei, V2ic, lw=0.5)
                 else:
-                    ax1.plot(basei, V2i, lw=0.05)
+                    ax1.plot(basei, V2i, lw=0.5)
 
         else:
             waveV2, waveCP, base, Bmax, V2data, V2err, CPdata, CPerr = Load(data)
@@ -384,9 +384,9 @@ class data:
                 if smooth != 0:
                     win = signal.hann(smooth)
                     CPic = signal.convolve(CPi, win, mode='same') / sum(win)
-                    ax2.plot(bmaxi, CPic, lw=0.05)
+                    ax2.plot(bmaxi, CPic, lw=0.5)
                 else:
-                    ax2.plot(bmaxi, CPi, lw=0.05)
+                    ax2.plot(bmaxi, CPi, lw=0.5)
 
         else:
             sc = ax2.scatter(Bmax[maskcp], CPdata[maskcp], s=0.1, c=waveCP[maskcp], cmap='gist_rainbow_r')
