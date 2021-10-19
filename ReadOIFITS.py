@@ -350,9 +350,12 @@ class data:
             sc = ax1.scatter(base[maskv2], V2data[maskv2], s=0.1, c=waveV2[maskv2], cmap='gist_rainbow_r')
             clb = fig.colorbar(sc, cax=cax)
             clb.set_label(r'Wavelength ($\mu$m)', rotation=270, labelpad=15)
-            a, b, c = ax1.errorbar(base[maskv2], V2data[maskv2], yerr=V2err[maskv2], marker='', elinewidth=0.05, ls='', zorder=0)
-            color = clb.to_rgba(waveV2[maskv2])
-            c[0].set_color(color)
+            #print(waveV2[maskv2].shape, V2err[maskv2].shape)
+            #ax1.errorbar(base[maskv2], V2data[maskv2], yerr=V2err[maskv2], marker='', color= waveV2[maskv2], elinewidth=0.05, ls='', zorder=0)
+
+            ax1.errorbar(base[maskv2], V2data[maskv2], yerr=V2err[maskv2], marker='', ecolor= 'gray', elinewidth=0.05, ls='', zorder=0)
+            #color = clb.to_rgba(waveV2[maskv2])
+            #c[0].set_color(color)
 
         if Blim == 0:
             if lines:
@@ -390,9 +393,9 @@ class data:
 
         else:
             sc = ax2.scatter(Bmax[maskcp], CPdata[maskcp], s=0.1, c=waveCP[maskcp], cmap='gist_rainbow_r')
-            a2, b2, c2 = ax2.errorbar(Bmax[maskcp], CPdata[maskcp], yerr=CPerr[maskcp], elinewidth=0.05, marker='', ls='', zorder=0)
-            colorCP = clb.to_rgba(waveCP[maskcp])
-            c2[0].set_color(colorCP)
+            ax2.errorbar(Bmax[maskcp], CPdata[maskcp], yerr=CPerr[maskcp], elinewidth=0.05, marker='', ls='', zorder=0, ecolor='gray')
+            #colorCP = clb.to_rgba(waveCP[maskcp])
+            #c2[0].set_color(colorCP)
 
         ax2.set_xlabel(r'B$_\mathrm{max}$ (M$\lambda$)', fontsize=8)
         ax2.set_title('Closure phases')
