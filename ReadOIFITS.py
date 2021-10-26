@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from pylab import *
 from sklearn import linear_model
 from scipy import signal
+from itertools import chain
 # OIFITS READING MODULE
 
 
@@ -54,8 +55,8 @@ def log(msg, dir):
     f.close()
 
 
-def read(dir, files, removeFlagged=True, cleanFlagged=False):
-    dataset = data(dir, files, removeFlagged=removeFlagged, cleanFlagged=cleanFlagged)
+def read(dir, files, removeFlagged=True, cleanFlagged=False, removeNan=False):
+    dataset = data(dir, files, removeFlagged=removeFlagged, cleanFlagged=cleanFlagged, removeNan=removeNan)
     return dataset
 
 
@@ -81,7 +82,7 @@ def Bases(data):
 
 
 class data:
-    def __init__(self, dir='./', files='*fits', removeFlagged=True, cleanFlagged=False):
+    def __init__(self, dir='./', files='*fits', removeFlagged=True, cleanFlagged=False, removeNan=False):
         self.files = files
         self.dir = dir
         self.target = []  # OITARGET()
@@ -99,6 +100,8 @@ class data:
             self.filterFlagged()
         if cleanFlagged:
             self.cleanFlagged()
+        if removeNan:
+            self.removeNan()
         header('Success! \o/')
 
     def writeOIFITS(self, dir, file, overwrite=False):
@@ -484,7 +487,7 @@ class data:
             t3.uf2 = t3.uf2[flag]
             t3.vf2 = t3.vf2[flag]
 
-    def cleanFlagged(self):
+    def cleanFlaggedOLD(self):
         inform('Cleaning flagged data...')
         # OIVIS
         for i in np.arange(len(self.vis)):
@@ -518,6 +521,76 @@ class data:
             for j in np.arange(len(flux.fluxerr)):
                 for k in np.arange(len(flux.fluxerr[j])):
                     if flux.fluxerr[j][k] <= 0 :
+                        flux.fluxerr[j][k] = 10**6
+
+    def cleanFlagged(self):
+        inform('Cleaning flagged data...')
+        # OIVIS
+        for i in np.arange(len(self.vis)):
+            vis = self.vis[i]
+            for j in np.arange(len(vis.visamperr)):
+                if vis.visamperr[j] <= 0 :
+                    vis.visamperr[j] = 10**6
+                if vis.visphierr[j] <= 0 :
+                    vis.visphierr[j] = 10**6
+        # OIVIS2
+        for i in np.arange(len(self.vis2)):
+            vis2 = self.vis2[i]
+            for j in np.arange(len(vis2.vis2err)):
+                if vis2.vis2err[j] <= 0 :
+                    vis2.vis2err[j] = 10**6
+
+        # OIT3
+        for i in np.arange(len(self.t3)):
+            t3 = self.t3[i]
+            for j in np.arange(len(t3.t3amperr)):
+                if t3.t3amperr[j] <= 0 :
+                    t3.t3amperr[j] = 10**6
+                if t3.t3phierr[j] <= 0 :
+                    t3.t3phierr[j] = 10**6
+        # OIFLUX
+        for i in np.arange(len(self.flux)):
+            flux = self.flux[i]
+            for j in np.arange(len(flux.fluxerr)):
+                for k in np.arange(len(flux.fluxerr[j])):
+                    if flux.fluxerr[j][k] <= 0 :
+                        flux.fluxerr[j][k] = 10**6
+
+    def removeNan(self):
+        inform('Remove remaining NaN data...')
+        # OIVIS
+        for i in np.arange(len(self.vis)):
+            vis = self.vis[i]
+            for j in np.arange(len(vis.visamperr)):
+                if np.isnan(vis.visamp[j]) :
+                    vis.visamperr[j] = 10**6
+                    vis.visamp[j] = 10
+
+        # OIVIS2
+        for i in np.arange(len(self.vis2)):
+            vis2 = self.vis2[i]
+            for j in np.arange(len(vis2.vis2err)):
+                if np.isnan(vis2.vis2data[j]) :
+                    vis2.vis2data[j] = 10
+                    vis2.vis2err[j] = 10**6
+
+        # OIT3
+        for i in np.arange(len(self.t3)):
+            t3 = self.t3[i]
+            for j in np.arange(len(t3.t3amperr)):
+                if np.isnan(t3.t3amp[j])  :
+                    t3.t3amperr[j] = 10**6
+                    t3.t3amp[j] =10
+                if np.isnan(t3.t3phi[j]) :
+                    t3.t3phierr[j] = 10**6
+                    t3.t3phi[j] = 200
+        # OIFLUX
+        for i in np.arange(len(self.flux)):
+            flux = self.flux[i]
+            for j in np.arange(len(flux.fluxerr)):
+                for k in np.arange(len(flux.fluxerr[j])):
+                    if np.isnan(flux.fluxerr[j][k])  :
+                        flux.flux[j][k] = 10**6
                         flux.fluxerr[j][k] = 10**6
 
     def extendMJD(self):
