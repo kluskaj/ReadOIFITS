@@ -1,2 +1,0 @@
-ReadOIFITS
-__init__
