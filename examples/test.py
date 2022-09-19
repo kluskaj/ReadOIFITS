@@ -12,7 +12,7 @@ data = oifits.read(dir, files, removeFlagged=False)
 data.writeOIFITS('./', 'test.fits', overwrite=True)
 
 # Plot V2, CP and uv-planes
-#data.plotV2CP(lines=False)
+data.plotV2CP(lines=False)
 
 # obtain the same structure used in previous scripts
 #dataJK = data.givedataJK()

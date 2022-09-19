@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from pylab import *
 from sklearn import linear_model
 from scipy import signal
-from itertools import chain
 # OIFITS READING MODULE
 
 
@@ -593,6 +592,21 @@ class data:
                         flux.flux[j][k] = 10**6
                         flux.fluxerr[j][k] = 10**6
 
+    #def associateStations(self):
+    #    inform('Assigning stations...')
+    #    stations = {}
+    #    for arr in self.array:
+
+
+        # OIVIS
+    #    for i in np.arange(len(self.vis)):
+    #        sta = []
+    #        staid = self.vis[i].staid
+    #        effwave = self.vis[i].effwave
+    #        for j in np.arange(len(mjd0)):
+    #            mjd.append(np.full(len(effwave[j]), mjd0[j]))
+    #        self.vis[i].mjd = np.array(mjd)
+
     def extendMJD(self):
         inform('Assigning mjd...')
         # OIVIS
@@ -635,6 +649,7 @@ class data:
                 lami = data.effwave
 
                 if removeflagged:
+                    print(flag.shape, V2i.shape)
                     V2.append(V2i[flag])
                     V2e.append(V2erri[flag])
                     u.append(ui[flag])
