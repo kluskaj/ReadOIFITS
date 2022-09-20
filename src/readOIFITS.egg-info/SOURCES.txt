@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+src/ReadOIFITS/ReadOIFITS.py
+src/ReadOIFITS/__init__.py
+src/readOIFITS.egg-info/PKG-INFO
+src/readOIFITS.egg-info/SOURCES.txt
+src/readOIFITS.egg-info/dependency_links.txt
+src/readOIFITS.egg-info/top_level.txt

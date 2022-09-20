@@ -8,8 +8,8 @@ dir = '/Users/jacques/Work/Targets/IRAS08544-4431/MATISSE/2020/Iter1_OIFITS_CALI
 files = '*N_*.fits'
 
 # Load the data
-data = oifits.read(dir, files, removeFlagged=False)
-data.writeOIFITS('./', 'test.fits', overwrite=True)
+data = oifits.read( files=files, dir=dir, removeFlagged=False)
+#data.writeOIFITS('./', 'test.fits', overwrite=True)
 
 # Plot V2, CP and uv-planes
 data.plotV2CP(lines=False)
