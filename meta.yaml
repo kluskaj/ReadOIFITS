@@ -1,0 +1,27 @@
+package:
+  name: readoifits
+  version: 0.0.7
+source:
+  path: src/
+build:
+  noarch: python
+  number: 1
+  script: python setup.py install
+
+channels:
+  - conda-forge
+  - defaults
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - astropy
+    - matplotlib
+    - numpy
+    - scikit-learn
+    - scipy
+about:
+  home: https://github.com/kluskaj/ReadOIFITS
+  license_file:
+    - LICENSE
