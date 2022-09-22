@@ -6,20 +6,13 @@ Welcome to ReadOIFITS's documentation!
 ReadOIFITS has its documentation hosted on Read the Docs.
 
 ReadOIFITS has been tested ton data from the following instruments:
-
--PIONIER
-
--GRAVITY
-
--MATISSE
-
--MIRCX
-
--MIDI
-
--NIRC2/SAM
-
--SPHERE/SAM
+*PIONIER
+*GRAVITY
+*MATISSE
+*MIRCX
+*MIDI
+*NIRC2/SAM
+*SPHERE/SAM
 
 
 Check out the :doc:`usage` section for further information, including
