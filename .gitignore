@@ -1,0 +1,5 @@
+__pycache__
+dist
+src/readOIFITS.egg-info
+readOIFITS.egg-info
+docs/build
