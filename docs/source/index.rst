@@ -1,5 +1,5 @@
 Welcome to ReadOIFITS's documentation!
-===================================
+======================================
 
 **ReadOIFITS** is a Python package to read OIFITS files.
 
@@ -29,4 +29,4 @@ Contents
 .. toctree::
 
    usage
-   api
+   ReadOIFITS
