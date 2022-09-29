@@ -57,13 +57,24 @@ def log(msg, dir):
 
 
 def read(dir, files, removeFlagged=True, cleanFlagged=False, removeNan=False):
-    '''Function ro read the oifits files and will create a data object
-    inputs:
-        dir: string with the directory name
-        files: string with the file name(s) (supports *.fits for example)
-        removeFlagged: boolean to remove flagged points from the data object
-        cleanFlagged: boolean to clean flagged points from the data object. to try if removeFlagged does not work
-        removeNan: boolean to remove NaNs points from the data object
+    '''
+    Function ro read the oifits files and will create a data object
+
+    :Parameters:
+        **dir**
+            string with the directory name
+
+        **files**
+            string with the file name(s) (supports *.fits for example)
+
+        **removeFlagged (optionnal)**
+            boolean to remove flagged points from the data object
+
+        **cleanFlagged (optionnal)**
+            boolean to clean flagged points from the data object. to try if removeFlagged does not work
+            
+        **removeNan (optionnal)**
+            boolean to remove NaNs points from the data object
     '''
     dataset = data(dir, files, removeFlagged=removeFlagged, cleanFlagged=cleanFlagged, removeNan=removeNan)
     return dataset
