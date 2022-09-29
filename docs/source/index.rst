@@ -29,4 +29,4 @@ Contents
 .. toctree::
 
    usage
-   ReadOIFITS
+   modules
