@@ -1,3 +1,5 @@
 # ReadOIFITS
 
-Here soon a description of the project
+A python library to load oifits files.
+
+The docs are [here](https://readoifits.readthedocs.io/en/latest/index.html)
