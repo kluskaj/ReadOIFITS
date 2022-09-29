@@ -5,3 +5,4 @@ readOIFITS.egg-info
 docs/build
 meta.yaml
 pyproject.toml
+docs/sourceOLD

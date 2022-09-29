@@ -6,14 +6,14 @@ Usage
 Installation
 ------------
 
-To use ReadOIFITS, first install it using pip:
+To use ReadOIFITS, first install it using conda:
 
 .. code-block:: console
 
    conda install readoifits
 
 Reading your oifits files
-----------------
+-------------------------
 
 To read your oifits files,
 you can use the ``ReadOIFITS.read()`` function:

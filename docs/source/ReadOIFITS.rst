@@ -1,6 +1,17 @@
 ReadOIFITS package
 ==================
 
+Submodules
+----------
+
+ReadOIFITS.ReadOIFITS module
+----------------------------
+
+.. automodule:: ReadOIFITS.ReadOIFITS
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
