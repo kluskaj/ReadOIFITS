@@ -104,7 +104,7 @@ def Bases(data):
 class data:
     def __init__(self, dir='./', files='*fits', removeFlagged=True, cleanFlagged=False, removeNan=False):
         self.files = files
-        self.dir = dir
+        self.dir = os.path.join(dir, '')
         self.target = []  # OITARGET()
         self.wave = []  # OIWAVE()
         self.vis2 = []  # OIVIS2()
